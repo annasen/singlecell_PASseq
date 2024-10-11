@@ -1,0 +1,604 @@
+---
+title: " Single cell PAS-seq"
+author: "AnnaS"
+date: "Last edited `r format (Sys.time(), '%d %B %Y')`"
+output: 
+  html_document:
+    toc: true
+    toc_float: true
+    number_sections: true
+    code_folding: hide
+    toc_depth: 4
+    fig_path: figure-html/
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+
+To retain the same randomness the set.seed function is used. 
+```{r setseed}
+set.seed(123)
+
+experiment_nr <- "AS-6"
+```
+
+# Load libraries and data
+
+```{r packages, message = FALSE}
+library(Seurat)
+library(SeuratObject)
+library(tidyverse)
+library(Matrix)
+library(BUSpaRse)
+library(cowplot)
+library(platetools) #plate overview
+library(RColorBrewer) #plate overview color scale
+```
+
+## Load the data of plate 29 and investigate
+
+Preprocessing with BUSpaRse kallistobus library
+
+```{r loading datasets 29, warning=FALSE, message=FALSE}
+##loading data from the server
+
+# #if you don't want to install BUSpaRse from github lambdamoses/BUStoolsR, no need, you can comment this back
+# list.files(".", recursive = TRUE)
+# 
+matrix29 <- readMM("plate29_ERCC/cells_x_genes.mtx")
+matrix29 <- Matrix::t(matrix29)
+matrix29 <- as(matrix29, "dgCMatrix")
+
+genes29 <- readLines("plate29_ERCC/cells_x_genes.genes.txt")
+barcodes29 <- readLines("plate29_ERCC/cells_x_genes.barcodes.txt")
+colnames(matrix29) <- barcodes29
+rownames(matrix29) <- genes29
+
+#match the order of the barcodes, so they are not alphabetically ordered, but reflect pipeting of the robot
+barcode384all <- readLines("barcode_384.tab")
+barcode384 <- sapply(barcode384all, function(x) substr(x, nchar(x) - 7, nchar(x)))
+all(barcodes29 %in% barcode384)
+all(barcode384 %in% barcodes29)
+#check order
+all(barcode384 == barcodes29)
+#check if they are the same when sorted alphabetically
+all(sort(barcode384) == sort(barcodes29))
+# Reorder the matrix columns to match the expected barcode order
+matrix29 <- matrix29[, match(barcode384, colnames(matrix29))]
+
+
+#load the matrix, you might need only this one
+res_mat29 <- read_count_output("plate29_ERCC/", name = "cells_x_genes")
+dim(res_mat29)
+res_mat29 <- res_mat29[, match(barcode384, colnames(res_mat29))]
+
+#library saturation visualization
+tot_counts <- colSums(res_mat29)
+lib_sat <- tibble(nCount = tot_counts,
+                  nGene = colSums(res_mat29 > 0))
+
+
+options(repr.plot.width=9, repr.plot.height=6)
+ggplot(lib_sat, aes(nCount, nGene)) +
+  geom_point(alpha = 0.1, size = 0.5) +
+  scale_x_log10() + scale_y_log10() + annotation_logticks()
+
+
+ggplot(lib_sat, aes(nCount, nGene)) +
+  geom_bin2d(bins = 50) +
+  scale_fill_distiller(palette = "Blues", direction = 1) +
+  scale_x_log10() + scale_y_log10() + annotation_logticks()
+
+
+summary(tot_counts)
+
+# Plot the transposed knee plot and inflection point
+# Plot a transposed knee plot, showing the inflection point and the number of remaining cells after inflection point filtering. It's
+# transposed since it's more generalizable to multi-modal data. Taken from the BUSpaRse package.
+get_knee_df <- function(mat) {
+  total <- rank <- NULL
+  tibble(total = Matrix::colSums(mat),
+         rank = row_number(desc(total))) %>%
+    distinct() %>%
+    dplyr::filter(total > 0) %>% 
+    arrange(rank)
+}
+
+
+get_inflection <- function(df, lower = 100) {
+  log_total <- log_rank <- total <-  NULL
+  df_fit <- df %>% 
+    dplyr::filter(total > lower) %>% 
+    transmute(log_total = log10(total),
+              log_rank = log10(rank))
+  d1n <- diff(df_fit$log_total)/diff(df_fit$log_rank)
+  right.edge <- which.min(d1n)
+  10^(df_fit$log_total[right.edge])
+}
+
+knee_plot <- function(df, inflection) {
+  total <- rank_cutoff <- NULL
+  annot <- tibble(inflection = inflection,
+                  rank_cutoff = max(df$rank[df$total > inflection]))
+  ggplot(df, aes(total, rank)) +
+    geom_path() +
+    geom_vline(aes(xintercept = inflection), data = annot, linetype = 2, 
+               color = "gray40") +
+    geom_hline(aes(yintercept = rank_cutoff), data = annot, linetype = 2, 
+               color = "gray40") +
+    geom_text(aes(inflection, rank_cutoff, 
+                  label = paste(rank_cutoff, "'cells'")),
+              data = annot, vjust = 1) +
+    scale_x_log10() +
+    scale_y_log10() +
+    labs(y = "Rank", x = "Total UMIs") +
+    annotation_logticks()
+}
+
+
+options(repr.plot.width=9, repr.plot.height=6)
+knee_df <- get_knee_df(res_mat29)
+inflection <- get_inflection(knee_df)
+knee_plot(knee_df, inflection)
+
+```
+
+## Load the data of plate 30 and investigate
+
+Preprocessing with BUSpaRse kallistobus library
+
+```{r load data plate30}
+##loading data from the server
+
+# #if you don't want to install BUSpaRse from github lambdamoses/BUStoolsR
+# list.files(".", recursive = TRUE)
+# 
+# matrix30 <- readMM("plate30/cells_x_genes.mtx")
+# matrix30 <- Matrix::t(matrix30)
+# matrix30 <- as(matrix30, "dgCMatrix")
+# 
+# genes30 <- readLines("plate30/cells_x_genes.genes.txt")
+# barcodes30 <- readLines("plate30/cells_x_genes.barcodes.txt")
+# colnames(matrix30) <- barcodes30
+# rownames(matrix30) <- genes30
+
+res_mat30 <- read_count_output("plate30_ERCC/", name = "cells_x_genes")
+dim(res_mat30)
+res_mat30 <- res_mat30[, match(barcode384, colnames(res_mat30))]
+
+#library saturation visualization
+tot_counts <- colSums(res_mat30)
+lib_sat <- tibble(nCount = tot_counts,
+                  nGene = colSums(res_mat30 > 0))
+
+
+options(repr.plot.width=9, repr.plot.height=6)
+ggplot(lib_sat, aes(nCount, nGene)) +
+  geom_point(alpha = 0.1, size = 0.5) +
+  scale_x_log10() + scale_y_log10() + annotation_logticks()
+
+
+ggplot(lib_sat, aes(nCount, nGene)) +
+  geom_bin2d(bins = 50) +
+  scale_fill_distiller(palette = "Blues", direction = 1) +
+  scale_x_log10() + scale_y_log10() + annotation_logticks()
+
+
+summary(tot_counts)
+
+
+# Plot the transposed knee plot and inflection point
+# Plot a transposed knee plot, showing the inflection point and the number of remaining cells after inflection point filtering. It's
+# transposed since it's more generalizable to multi-modal data. Taken from the BUSpaRse package.
+get_knee_df <- function(mat) {
+  total <- rank <- NULL
+  tibble(total = Matrix::colSums(mat),
+         rank = row_number(desc(total))) %>%
+    distinct() %>%
+    dplyr::filter(total > 0) %>% 
+    arrange(rank)
+}
+
+
+get_inflection <- function(df, lower = 100) {
+  log_total <- log_rank <- total <-  NULL
+  df_fit <- df %>% 
+    dplyr::filter(total > lower) %>% 
+    transmute(log_total = log10(total),
+              log_rank = log10(rank))
+  d1n <- diff(df_fit$log_total)/diff(df_fit$log_rank)
+  right.edge <- which.min(d1n)
+  10^(df_fit$log_total[right.edge])
+}
+
+knee_plot <- function(df, inflection) {
+  total <- rank_cutoff <- NULL
+  annot <- tibble(inflection = inflection,
+                  rank_cutoff = max(df$rank[df$total > inflection]))
+  ggplot(df, aes(total, rank)) +
+    geom_path() +
+    geom_vline(aes(xintercept = inflection), data = annot, linetype = 2, 
+               color = "gray40") +
+    geom_hline(aes(yintercept = rank_cutoff), data = annot, linetype = 2, 
+               color = "gray40") +
+    geom_text(aes(inflection, rank_cutoff, 
+                  label = paste(rank_cutoff, "'cells'")),
+              data = annot, vjust = 1) +
+    scale_x_log10() +
+    scale_y_log10() +
+    labs(y = "Rank", x = "Total UMIs") +
+    annotation_logticks()
+}
+
+
+options(repr.plot.width=9, repr.plot.height=6)
+knee_df <- get_knee_df(res_mat30)
+inflection <- get_inflection(knee_df)
+knee_plot(knee_df, inflection)
+```
+## Create a plate overview of ERCCs and UMIs  
+Rebecca's script generates a plot of the plates showing a QC overview of the UMI and ERCC count distribution per well.
+
+More information on platetools:
+github.com/swarchal/platetools  --> vignette for examples
+
+```{r plate overview}
+#Rebecca's function
+source("qc_umis_384plot.R")
+source("qc_ercc_384plot.R")
+
+QC_umis_384plot(res_mat29, paste("plate_29", "UMI_QC", sep = "_"))
+QC_umis_384plot(res_mat30, paste("plate_30", "UMI_QC", sep = "_"))
+QC_ERCC_384plot(res_mat29[grep("^ERCC-", rownames(res_mat29)),], paste("plate_29", "ERCC_QC", sep = "_"))
+QC_ERCC_384plot(res_mat30[grep("^ERCC-", rownames(res_mat30)),], paste("plate_30", "ERCC_QC", sep = "_"))
+
+```
+
+
+## Gene annotation and filter for both plate29 and plate30  
+For many barcodes, the top genes by proportion of all counts are ribosomal or mitochondrial genes. Also, the proportions plotted below seem to have some discrete values; this effect is a result of computing fractions with small denominator, which happens when droplets produce very few UMI counts.
+```{r gene annotation}
+tr2g <- read_tsv("GRCh38.p13+ERCC.t2g.txt", col_names = c("transcript", "gene", "gene_name", "NA", "chr", "loc1", "loc2", "strand"))
+tr2g <- distinct(tr2g[, c("gene", "gene_name")])
+
+
+plot_pct_genes <- function(mat, tr2g, top_n = 20, symbol = "ensembl") {
+  pct_tx <- rowSums(mat)
+  gs <- rownames(mat)[order(-pct_tx)]
+  df <- as.data.frame(t(mat[gs[1:20],]))
+  df <- df %>%
+    mutate_all(function(x) x/colSums(mat)) %>%
+    pivot_longer(everything(), names_to = "gene")
+  if (symbol == "ensembl") {
+    df <- left_join(df, tr2g, by = "gene")
+  } else {
+    df <- rename(df, gene_name = gene)
+  }
+    df %>%
+    mutate(gene = fct_reorder(gene_name, value, .fun = median)) %>%
+    ggplot(aes(gene, value)) +
+    geom_boxplot() +
+    labs(x = "", y = "Proportion of total counts") +
+    coord_flip()
+}
+
+#top 20 genes plate 29
+options(repr.plot.width=6, repr.plot.height=10)
+plot_pct_genes(res_mat29, tr2g)
+
+#top 20 genes plate 30
+options(repr.plot.width=6, repr.plot.height=10)
+plot_pct_genes(res_mat30, tr2g)
+
+#filter out counts that are lower than the inflection threshold, this is changing order of the colnames
+res_mat29 <- res_mat29[, tot_counts > inflection]
+res_mat29 <- res_mat29[Matrix::rowSums(res_mat29) > 0,]
+dim(res_mat29)
+
+#filter out counts that are lower than the inflection threshold, this is changing order of the colnames
+res_mat30 <- res_mat30[, tot_counts > inflection]
+res_mat30 <- res_mat30[Matrix::rowSums(res_mat30) > 0,]
+dim(res_mat30)
+
+#convert rownames from Ensembl gene ID to gene symbol
+rownames(res_mat29) <- tr2g$gene_name[match(rownames(res_mat29), tr2g$gene)]
+rownames(res_mat30) <- tr2g$gene_name[match(rownames(res_mat30), tr2g$gene)]
+```
+
+## Create Seurat Object  
+```{r create seurat object}
+#remove duplicate rownames
+dim(res_mat29)
+duplicates <- rownames(res_mat29)[duplicated(rownames(res_mat29))]
+unique_duplicates <- unique(duplicates)
+print(unique_duplicates)
+res_mat29 <- res_mat29[!duplicated(rownames(res_mat29)), ]
+dim(res_mat29)
+
+dim(res_mat30)
+duplicates <- rownames(res_mat30)[duplicated(rownames(res_mat30))]
+unique_duplicates <- unique(duplicates)
+print(unique_duplicates)
+res_mat30 <- res_mat30[!duplicated(rownames(res_mat30)), ]
+dim(res_mat30)
+
+plate29 <- CreateSeuratObject(counts = res_mat29, project = "plate29", min.cells = 3, min.features = 200)
+plate30 <- CreateSeuratObject(counts = res_mat30, project = "plate30", min.cells = 3, min.features = 200)
+
+#check if there are still NA values in the rownames, if yes, assign it a name
+which(is.na(rownames(plate29)))
+which(is.na(rownames(plate30)))
+rownames(plate29)[is.na(rownames(plate29))] <- "unknown_gene_plate29"
+rownames(plate30)[is.na(rownames(plate30))] <- "unknown_gene_plate30"
+
+#merge all samples in one seurat_object, passing one dataset in x and the rest as a list in y
+seurat_object <- merge(x = plate29, y = plate30, add.cell.ids = c("plate29", "plate30"))
+
+# to check class, nr of features and samples (nuclei), nr of active assays (RNA counts?)
+#check.seurat_object <- CreateSeuratObject(counts = wt.data, project = "wt")
+#check.seurat_object
+rownames(seurat_object)[1:5]
+
+```
+
+# QC, filtering and normalization
+
+Seurat allows you to easily explore QC metrics and filter cells based on any user-defined criteria. A few QC metrics commonly used by the community include 
+-- The number of unique genes detected in each cell.
+-- Low-quality cells or empty droplets will often have very few genes
+-- Cell doublets or multiplets may exhibit an aberrantly high gene count
+-- Similarly, the total number of molecules detected within a cell (correlates strongly with unique genes)
+
+```{r QC metrics}
+# The [[ operator can add columns to object metadata. This is a great place to stash QC stats
+seurat_object[["percent.mt"]] <- PercentageFeatureSet(seurat_object, pattern = "^MT-")
+
+# Show QC metrics for the first 5 cells
+head(seurat_object@meta.data, 5)
+# On left are the barcodes, nCount_RNA is the total number of molecules detected within a droplet using exonic and intronic sequences , nFeature_RNA is the number of detected genes in each droplet using exonic and intronic sequences. 
+```
+
+## Visualize number of detected genes and RNA counts
+
+nFeature_RNA (Number of Detected Genes): This metric represents the number of unique genes that were detected in a single cell. It gives you an idea of the diversity of genes that are expressed in a cell. Cells with a higher nFeature_RNA value typically indicate greater transcriptional complexity, which can be a sign of a healthy and functional cell. Conversely, cells with a very low nFeature_RNA value may be low-quality or potentially damaged cells.
+
+nCount_RNA (Total RNA Counts): This metric represents the total number of RNA molecules (or reads) that were detected in a single cell. It provides a measure of the total RNA content of a cell. Cells with a higher nCount_RNA value may have more RNA content, which can be related to factors such as cell size or metabolic activity. Extremely high or low nCount_RNA values can be indicative of potential issues or outliers.
+
+```{r violinplot, fig.cap = "The violinplot shows the gene count distribution of the nuclei. Features: number of genes detected in each nuclei. nCount: total number or molecules detected.", warning=FALSE, message=FALSE}
+# Visualize QC metrics as a violin plot of the features for each sample
+options(repr.plot.width=12, repr.plot.height=6)
+VlnPlot(seurat_object, features = c("nFeature_RNA", "nCount_RNA", "percent.mt"), ncol = 3)
+
+```
+
+
+## Visualize feature-nCount relationship
+
+0.99 denotes the correlations between x-axis and y-axis, namely the number of molecules and number of genes in a cell.
+
+```{r feature-scatter}
+plot.f_f <- FeatureScatter(seurat_object, feature1 = "nCount_RNA", feature2 = "nFeature_RNA", group.by = "orig.ident")
+plot.f_f
+
+#make a subset of orig.ident to make your life easier
+seurat.subset <- SplitObject(seurat_object, split.by = "orig.ident")
+plot.f_f.29 <- FeatureScatter(seurat.subset$plate29, feature1 = "nCount_RNA", feature2 = "nFeature_RNA")
+plot.f_f.30 <- FeatureScatter(seurat.subset$plate30, feature1 = "nCount_RNA", feature2 = "nFeature_RNA")
+
+plot.f_f.29 + plot.f_f.30
+
+```
+
+## Filter the data
+
+Take nuclei with a feature number 200 and <2000
+
+```{r violinplot with thresholds, warning=FALSE}
+plot.violin3 <- VlnPlot(seurat_object, features = c("nFeature_RNA"), ncol = 1, pt.size = 0.0001) + background_grid(major = ("xy"), minor = ("y")) + theme(axis.text.x = element_blank()) + geom_hline(yintercept = c(200, 2000), color = "red", linewidth = 0.2)
+plot.violin3
+
+plot.violin4 <- VlnPlot(seurat_object, features = c("nFeature_RNA"), ncol = 1, pt.size = 0) + background_grid(major = ("xy"), minor = ("y")) + theme(axis.text.x = element_blank()) + geom_hline(yintercept = c(200, 2000), color = "red", linewidth = 0.2)
+plot.violin4
+
+seurat_object <- subset(seurat_object, subset = nFeature_RNA > 200 & nFeature_RNA < 2000) 
+
+```
+
+### Violinplots after selection
+
+The violinplot shows the gene count distribution of nuclei after filtering. 
+
+```{r violinplot after filtering, warning=FALSE}
+plot.violin5 <- VlnPlot(seurat_object, features = c("nFeature_RNA"), ncol = 1, pt.size = 0.0001) + background_grid(major = ("xy"), minor = ("y"))
+plot.violin5
+
+plot.violin6 <-  VlnPlot(seurat_object, features = c("nFeature_RNA"), ncol = 1, pt.size = 0) + background_grid(major = ("xy"), minor = ("y"))
+plot.violin6
+```
+
+## Dimensions/Nuclei count of the samples in the object
+
+Nuclei count prior the removal of nuclei containing mitochondrial gene transcripts.
+Establishing samples variable.
+
+```{r dimensions}
+#I am using variable samples many times further on
+samples <- c("plate29", "plate30")
+
+for (i in seq_along(samples)) {
+  print(paste("Nuclei count of", samples[[i]], "dataset"))
+  print(dim(subset(x = seurat_object, subset = orig.ident == (paste(samples[[i]])))))
+}
+
+```
+
+## Normalize the data
+
+```{r norm, message=FALSE}
+seurat_object <- NormalizeData(seurat_object, normalization.method = "LogNormalize", scale.factor = 10000)
+```
+
+## Identification of highly variable genes (feature selection)
+Identify top 10 most variable genes. The plot identifies features that are outliers on a 'vst' or 'mean variability plot'. 
+This function computes a score for each gene to select the 2000 bests for the next step, the PCA.
+For a gene, the more variability in the counts matrix for each cells the better. For each gene they compute the mean and variance of not normalized UMI and apply log10 for var and mean
+```{r var features, message=FALSE, warning=FALSE}
+options(repr.plot.width=6, repr.plot.height=10)
+#plot_pct_genes(GetAssayData(seurat_object, assay = "RNA"), tr2g, symbol = "symbol") not working for Seurat v5
+plot_pct_genes(LayerData(seurat_object), tr2g, symbol = "symbol")
+
+seurat_object <- FindVariableFeatures(seurat_object, selection.method = "vst", nfeatures = 2000)
+
+top10 <- head(VariableFeatures(seurat_object), 10)
+top10
+
+plot.volcano.wo.labels <- VariableFeaturePlot(seurat_object)
+plot.volcano.labels <- LabelPoints(plot = plot.volcano.wo.labels, points = top10, repel = TRUE)
+plot.volcano.wo.labels
+plot.volcano.labels
+```
+
+## Scaling the data
+
+Applies linear transformation that is a standard pre-processing step
+prior to dimensional reduction techniques like PCA. The ScaleData()
+function: Shifts and scales the expression of each gene, so that the
+mean expression across cells is 0 and variance is 1.  
+This step gives equal weight in downstream analyses, so that highly-expressed genes do
+not dominate.  
+Takes a bit of time and some memory usage
+
+```{r scaling, message=FALSE}
+all.genes <- rownames(seurat_object)
+seurat_object <- ScaleData(seurat_object, features = all.genes)
+```
+
+# Dimensional reductions
+
+## Linear dimensional reduction (PCA)
+
+Perform PCA on scaled data and shows genes which have positive/negative
+principal component scores. 
+Principal component analysis, or PCA, is a dimensionality reduction method to reduce the dimensionality of large data sets, by transforming a large set of variables into a smaller one that still contains most of the information in the large set.
+PCA reduces the number of variables of a data set, while preserving as much information as possible.
+
+```{r pca, message=FALSE}
+seurat_object <- RunPCA(seurat_object, features = VariableFeatures(object=seurat_object))
+print(seurat_object[["pca"]], dims=1:5, nfeatures=5)
+VizDimLoadings(seurat_object, dims=1:2, reduction="pca")
+
+DimPlot(seurat_object, reduction = "pca")
+
+options(repr.plot.width=7, repr.plot.height=6)
+FeaturePlot(seurat_object, reduction = "pca", feature = "CST3")
+```
+
+### Heatmaps - to visualize linear dimensional reduction
+
+DimHeatmap() explore the primary sources of heterogeneity in a dataset.
+Can be useful when trying to decide which PCs to include for further
+downstream analyses. Both cells and features are ordered according to
+their PCA scores. 
+
+```{r heatmaps, message=FALSE}
+DimHeatmap(seurat_object, dims=1, cells=500, balanced = TRUE)
+
+DimHeatmap(seurat_object, dims=1:21, cells=500, balanced = TRUE)
+```
+
+### Determine the 'dimensionality' of the dataset
+
+To overcome the extensive technical noise in any single feature for
+scRNA-seq data, Seurat clusters cells based on their PCA scores, with
+each PC essentially representing a 'metafeature' that combines
+information across a correlated feature set. The top principal
+components therefore represent a robust compression of the dataset.
+However it is challenging to choose how many components to include.
+
+An alternative heuristic method generates an 'Elbow plot': a ranking of
+principle components based on the percentage of variance explained by
+each one (ElbowPlot() function). In this example, we can observe an
+'elbow' around PC9-10, suggesting that the majority of true signal is
+captured in the first 10 PCs.
+
+```{r elbowplot, message=FALSE}
+ElbowPlot(seurat_object)
+```
+
+Identifying the true dimensionality of a dataset can be
+challenging/uncertain. 
+
+
+# Cluster the cells
+
+Seurat v3 applies a graph-based clustering approach. Importantly, the
+distance metric which drives the clustering analysis (based on
+previously identified PCs) remains the same. 
+
+To cluster the cells, we apply modularity optimization techniques to
+iteratively group cells together, with the goal of optimizing the
+standard modularity function. The FindClusters() function implements
+this procedure, and contains a resolution parameter that sets the
+'granularity' of the downstream clustering, with increased values
+leading to a greater number of clusters. We find that setting this
+parameter between 0.4-1.2 typically returns good results for single-cell
+datasets of around 3K cells. Optimal resolution often increases for
+larger datasets. 
+The clusters can be found using the Idents() function.
+
+```{r cluster, message=FALSE}
+#the settings here can be changed, let's try dimensions 10, 20, and 30, and four different resolutions
+seurat_object <- FindNeighbors(seurat_object, dims = 1:15) 
+
+seurat_object <- FindClusters(seurat_object, resolution = 0.6)
+
+# Look at cluster IDs of the first 5 cells
+head(Idents(seurat_object), 5)
+
+```
+
+# Run UMAP
+
+```{r non-linear reduction, message=FALSE, warning=FALSE}
+seurat_object <- RunUMAP(seurat_object, dims = 1:15, verbose = FALSE)
+DimPlot(seurat_object, reduction = "umap")
+```
+
+
+## Check nFeature_RNA
+```{r features in UMAP}
+plot.features<- FeaturePlot(seurat_object, features = "nFeature_RNA", pt.size = 0.5)
+plot.features
+# png("plot.features.jpg", width = 1200, height=800)
+# plot(plot.features)
+# dev.off()
+
+plot.counts<- FeaturePlot(seurat_object, features = "nCount_RNA", pt.size = 0.5)
+plot.counts
+# png("plot.counts.jpg", width = 1200, height=800)
+# plot(plot.counts)
+# dev.off()
+```
+
+
+Save the seurat_object
+```{r save the object}
+saveRDS(seurat_object, file = "seurat_obj_scPASseq.rds")
+```
+
+
+# Session info
+```{r session info}
+sessionInfo()
+```
+
+
+
+
+
+
+
+
+
+
