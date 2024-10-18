@@ -1,3 +1,5 @@
+![R](https://img.shields.io/badge/r-%23276DC3.svg?style=for-the-badge&logo=r&logoColor=white) ![Bash Script](https://img.shields.io/badge/bash_script-%23121011.svg?style=for-the-badge&logo=gnu-bash&logoColor=white)
+
 # Single-cell PAS-seq
 
 This workflow describes how to analyze data produced by a single-cell plate-based protocol inspired by **PAS-seq2** and **CEL-Seq2** protocols:
