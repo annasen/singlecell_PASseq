@@ -6,5 +6,5 @@ This workflow describes how to analyze data produced by a single-cell plate-base
 
 The library prep protocol can be found at **LW-100 test new single cell PASseq protocol** in eLabFTW journal, Mulder group.
 
-The fastq data were mapped by kallistobus (see mapping-data-kallistobus.sh, plate barcodes can be found in barcodes384.txt file). 
-The kallistobus output, cell_x_genes.mtx matrix, was used for further analysis in R (see scPASseq.Rmd). Two Rebecca's scripts for ERCC and UMI layout in plate were used in the R code (qc_ercc_384plot.R and qc_umis_384plot.R).
+The fastq data were mapped by kallistobus (see _mapping-data-kallistobus.sh_, plate barcodes can be found in _barcodes384.txt_ file). 
+The kallistobus output, cell_x_genes.mtx matrix, was used for further analysis in R (see _scPASseq.Rmd_). Two Rebecca's scripts for ERCC and UMI layout in plate were used in the R code (_qc_ercc_384plot.R_ and _qc_umis_384plot.R_).
