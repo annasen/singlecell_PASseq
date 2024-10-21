@@ -156,9 +156,7 @@ source("qc_umis_384plot.R")
 source("qc_ercc_384plot.R")
 
 QC_umis_384plot(res_mat29, paste("plate_29", "UMI_QC", sep = "_"))
-QC_umis_384plot(res_mat30, paste("plate_30", "UMI_QC", sep = "_"))
 QC_ERCC_384plot(res_mat29[grep("^ERCC-", rownames(res_mat29)),], paste("plate_29", "ERCC_QC", sep = "_"))
-QC_ERCC_384plot(res_mat30[grep("^ERCC-", rownames(res_mat30)),], paste("plate_30", "ERCC_QC", sep = "_"))
 
 ```
 
