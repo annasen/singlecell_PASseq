@@ -19,4 +19,4 @@ Further explanation on kallistobus package and settings can be found in Rebecca'
 >  https://www.biorxiv.org/content/10.1101/2024.04.09.588683v2 in section COMPUTATIONAL METHODS, Processing and integration of CEL-Seq2 scRNA-sequencing data
 
 
-"*" The picture shows only 6 nt barcodes, because it comes from a PAS-seq tube-based experiment. There we use 48 different CEL-Seq2 RT primes. However, for plate-based experiments (as is this one), we have a set of 384 CEL-Seq2 RT primers.
+\* The picture shows only 6 nt barcodes, because it comes from a PAS-seq tube-based experiment. There we use 48 different CEL-Seq2 RT primes. However, for plate-based experiments (as is this one), we have a set of 384 CEL-Seq2 RT primers.
