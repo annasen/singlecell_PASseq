@@ -141,102 +141,9 @@ options(repr.plot.width=9, repr.plot.height=6)
 knee_df <- get_knee_df(res_mat29)
 inflection <- get_inflection(knee_df)
 knee_plot(knee_df, inflection)
-
 ```
 
-## Load the data of plate 30 and investigate
 
-Preprocessing with BUSpaRse kallistobus library
-
-```{r load data plate30}
-##loading data from the server
-
-# #if you don't want to install BUSpaRse from github lambdamoses/BUStoolsR
-# list.files(".", recursive = TRUE)
-# 
-# matrix30 <- readMM("plate30/cells_x_genes.mtx")
-# matrix30 <- Matrix::t(matrix30)
-# matrix30 <- as(matrix30, "dgCMatrix")
-# 
-# genes30 <- readLines("plate30/cells_x_genes.genes.txt")
-# barcodes30 <- readLines("plate30/cells_x_genes.barcodes.txt")
-# colnames(matrix30) <- barcodes30
-# rownames(matrix30) <- genes30
-
-res_mat30 <- read_count_output("plate30_ERCC/", name = "cells_x_genes")
-dim(res_mat30)
-res_mat30 <- res_mat30[, match(barcode384, colnames(res_mat30))]
-
-#library saturation visualization
-tot_counts <- colSums(res_mat30)
-lib_sat <- tibble(nCount = tot_counts,
-                  nGene = colSums(res_mat30 > 0))
-
-
-options(repr.plot.width=9, repr.plot.height=6)
-ggplot(lib_sat, aes(nCount, nGene)) +
-  geom_point(alpha = 0.1, size = 0.5) +
-  scale_x_log10() + scale_y_log10() + annotation_logticks()
-
-
-ggplot(lib_sat, aes(nCount, nGene)) +
-  geom_bin2d(bins = 50) +
-  scale_fill_distiller(palette = "Blues", direction = 1) +
-  scale_x_log10() + scale_y_log10() + annotation_logticks()
-
-
-summary(tot_counts)
-
-
-# Plot the transposed knee plot and inflection point
-# Plot a transposed knee plot, showing the inflection point and the number of remaining cells after inflection point filtering. It's
-# transposed since it's more generalizable to multi-modal data. Taken from the BUSpaRse package.
-get_knee_df <- function(mat) {
-  total <- rank <- NULL
-  tibble(total = Matrix::colSums(mat),
-         rank = row_number(desc(total))) %>%
-    distinct() %>%
-    dplyr::filter(total > 0) %>% 
-    arrange(rank)
-}
-
-
-get_inflection <- function(df, lower = 100) {
-  log_total <- log_rank <- total <-  NULL
-  df_fit <- df %>% 
-    dplyr::filter(total > lower) %>% 
-    transmute(log_total = log10(total),
-              log_rank = log10(rank))
-  d1n <- diff(df_fit$log_total)/diff(df_fit$log_rank)
-  right.edge <- which.min(d1n)
-  10^(df_fit$log_total[right.edge])
-}
-
-knee_plot <- function(df, inflection) {
-  total <- rank_cutoff <- NULL
-  annot <- tibble(inflection = inflection,
-                  rank_cutoff = max(df$rank[df$total > inflection]))
-  ggplot(df, aes(total, rank)) +
-    geom_path() +
-    geom_vline(aes(xintercept = inflection), data = annot, linetype = 2, 
-               color = "gray40") +
-    geom_hline(aes(yintercept = rank_cutoff), data = annot, linetype = 2, 
-               color = "gray40") +
-    geom_text(aes(inflection, rank_cutoff, 
-                  label = paste(rank_cutoff, "'cells'")),
-              data = annot, vjust = 1) +
-    scale_x_log10() +
-    scale_y_log10() +
-    labs(y = "Rank", x = "Total UMIs") +
-    annotation_logticks()
-}
-
-
-options(repr.plot.width=9, repr.plot.height=6)
-knee_df <- get_knee_df(res_mat30)
-inflection <- get_inflection(knee_df)
-knee_plot(knee_df, inflection)
-```
 ## Create a plate overview of ERCCs and UMIs  
 Rebecca's script generates a plot of the plates showing a QC overview of the UMI and ERCC count distribution per well.
 
@@ -287,23 +194,13 @@ plot_pct_genes <- function(mat, tr2g, top_n = 20, symbol = "ensembl") {
 options(repr.plot.width=6, repr.plot.height=10)
 plot_pct_genes(res_mat29, tr2g)
 
-#top 20 genes plate 30
-options(repr.plot.width=6, repr.plot.height=10)
-plot_pct_genes(res_mat30, tr2g)
-
 #filter out counts that are lower than the inflection threshold, this is changing order of the colnames
 res_mat29 <- res_mat29[, tot_counts > inflection]
 res_mat29 <- res_mat29[Matrix::rowSums(res_mat29) > 0,]
 dim(res_mat29)
 
-#filter out counts that are lower than the inflection threshold, this is changing order of the colnames
-res_mat30 <- res_mat30[, tot_counts > inflection]
-res_mat30 <- res_mat30[Matrix::rowSums(res_mat30) > 0,]
-dim(res_mat30)
-
 #convert rownames from Ensembl gene ID to gene symbol
 rownames(res_mat29) <- tr2g$gene_name[match(rownames(res_mat29), tr2g$gene)]
-rownames(res_mat30) <- tr2g$gene_name[match(rownames(res_mat30), tr2g$gene)]
 ```
 
 ## Create Seurat Object  
@@ -316,23 +213,13 @@ print(unique_duplicates)
 res_mat29 <- res_mat29[!duplicated(rownames(res_mat29)), ]
 dim(res_mat29)
 
-dim(res_mat30)
-duplicates <- rownames(res_mat30)[duplicated(rownames(res_mat30))]
-unique_duplicates <- unique(duplicates)
-print(unique_duplicates)
-res_mat30 <- res_mat30[!duplicated(rownames(res_mat30)), ]
-dim(res_mat30)
-
 plate29 <- CreateSeuratObject(counts = res_mat29, project = "plate29", min.cells = 3, min.features = 200)
-plate30 <- CreateSeuratObject(counts = res_mat30, project = "plate30", min.cells = 3, min.features = 200)
 
 #check if there are still NA values in the rownames, if yes, assign it a name
 which(is.na(rownames(plate29)))
-which(is.na(rownames(plate30)))
 rownames(plate29)[is.na(rownames(plate29))] <- "unknown_gene_plate29"
-rownames(plate30)[is.na(rownames(plate30))] <- "unknown_gene_plate30"
 
-#merge all samples in one seurat_object, passing one dataset in x and the rest as a list in y
+#merge all samples in one seurat_object, passing one dataset in x and the rest as a list in y (originally, I had two plates)
 seurat_object <- merge(x = plate29, y = plate30, add.cell.ids = c("plate29", "plate30"))
 
 # to check class, nr of features and samples (nuclei), nr of active assays (RNA counts?)
@@ -384,9 +271,7 @@ plot.f_f
 #make a subset of orig.ident to make your life easier
 seurat.subset <- SplitObject(seurat_object, split.by = "orig.ident")
 plot.f_f.29 <- FeatureScatter(seurat.subset$plate29, feature1 = "nCount_RNA", feature2 = "nFeature_RNA")
-plot.f_f.30 <- FeatureScatter(seurat.subset$plate30, feature1 = "nCount_RNA", feature2 = "nFeature_RNA")
-
-plot.f_f.29 + plot.f_f.30
+plot.f_f.29
 
 ```
 
