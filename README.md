@@ -12,3 +12,4 @@ The fastq data were mapped by kallistobus (see _mapping-data-kallistobus.sh_, pl
 The kallistobus output, cell_x_genes.mtx matrix, was used for further analysis in R (see _scPASseq.Rmd_). Two Rebecca's scripts for ERCC and UMI layout in plate were used in the R code (_qc_ercc_384plot.R_ and _qc_umis_384plot.R_).
 Further explanation on kallistobus package and settings can be found in Rebecca's paper
 >  https://www.biorxiv.org/content/10.1101/2024.04.09.588683v2 in section COMPUTATIONAL METHODS, Processing and integration of CEL-Seq2 scRNA-sequencing data 
+![R2_like-CELseq2](https://github.com/user-attachments/assets/88cab12e-4d1a-4405-876f-6a085b09eef2)
