@@ -1,4 +1,4 @@
-# download a genome of interest in .fa and .gtf format and merge it with ERCC.fa and ERCC.gtf
+# download a genome of interest in .fa and .gtf format and merge it with ERCC.fa and ERCC.gtf or find them in my folder /vol/moldevbio/veenstra/asenovska/genomes/GRCh38.p13+ERCC/
 
 # run kallistobus reference to get the .idx file
 kb ref -i GRCh38.p13+ERCC.idx -g GRCh38.p13+ERCC.t2g.txt -f1 GRCh38+ERCC.p13.cdna.fa GRCh38.p13+ERCC.fa GRCh38.p13+ERCC.annotation.gtf
