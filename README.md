@@ -15,7 +15,7 @@ In our set-up, the barcodes are stored in R2: 8 nt UMI, 8 nt* cell barcode, poly
 
 ![R2_like-CELseq2](https://github.com/user-attachments/assets/88cab12e-4d1a-4405-876f-6a085b09eef2)
 
-Further explanation on kallistobus package and settings can be found in Rebecca's paper
+Further explanation on kallistobus package and usage on CEL-Seq2 poly-dT oligos can be found in Rebecca's paper
 >  https://www.biorxiv.org/content/10.1101/2024.04.09.588683v2 in section COMPUTATIONAL METHODS, Processing and integration of CEL-Seq2 scRNA-sequencing data
 
 
