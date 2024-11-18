@@ -11,6 +11,7 @@ The library prep protocol can be found at **LW-100 test new single cell PASseq p
 The fastq data were mapped by kallistobus (see _mapping-data-kallistobus.sh_, plate barcodes can be found in _barcodes384.txt_ file). 
 
 In our set-up, the barcodes are stored in R2: 8 nt UMI, 8 nt* cell barcode, poly-T, and only few nt. Therefore, we use only R1 for the genomic sequence, and R2 barcodes for cell assignment.
+\* The picture shows only 6 nt barcodes, because it comes from a PAS-seq tube-based experiment. There we use 48 different 6nt CEL-Seq2 RT primes. However, for plate-based experiments (as is this one), we have a set of 384 8nt CEL-Seq2 RT primers.
 
 ![R2_like-CELseq2](https://github.com/user-attachments/assets/88cab12e-4d1a-4405-876f-6a085b09eef2)
 
@@ -18,13 +19,12 @@ Further explanation on kallistobus package and usage on CEL-Seq2 poly-dT oligos 
 >  https://www.biorxiv.org/content/10.1101/2024.04.09.588683v2 in section COMPUTATIONAL METHODS, Processing and integration of CEL-Seq2 scRNA-sequencing data
 
 
-\* The picture shows only 6 nt barcodes, because it comes from a PAS-seq tube-based experiment. There we use 48 different 6nt CEL-Seq2 RT primes. However, for plate-based experiments (as is this one), we have a set of 384 8nt CEL-Seq2 RT primers.
 
 ## Map the fastq data with kallisotbus
 The fastq data were mapped by kallistobus (plate barcodes can be found in _barcodes384.txt_ file).
 
 ### 1 Download genome
-Download a genome of interest in .fa and .gtf format 
+Download a genome of interest in .fa and .gtf format.
 If you are using ERCC, merge the genome of interest with ERCC.fa and ERCC.gtf, GRCh38p13+ERCC can be found in /vol/moldevbio/veenstra/asenovska/genomes/GRCh38.p13+ERCC/
 
 ### 2 Index the genome
