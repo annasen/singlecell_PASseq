@@ -28,7 +28,8 @@ kb ref -i GRCh38.p13+ERCC.idx -g GRCh38.p13+ERCC.t2g.txt -f1 GRCh38+ERCC.p13.cdn
 ```
 
 ### 3 Map the data with kallistobus count
-In the code below, there is an -x flag with different numbers. Those explain the position of barcodes. 0 stands for R1, 1 for R2. The order is: barcode file, start bp, end bp : UMI file, start bp, end bp : coding file, start bp, end bp. Our barcodes are in R2 between positions 8-16.  
+In the code below, there is an -x flag with different numbers. The numbers explain the position of barcodes. 0 stands for R1, 1 for R2.  
+The order is: barcode file, start bp, end bp : UMI file, start bp, end bp : coding file, start bp, end bp. Our barcodes are in R2 between positions 8-16.  
 This is further specified in Rebecca's paper in section COMPUTATIONAL METHODS, Processing and integration of CEL-Seq2 scRNA-sequencing data:
 > https://www.biorxiv.org/content/10.1101/2024.04.09.588683v2
 
