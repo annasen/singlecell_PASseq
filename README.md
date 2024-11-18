@@ -45,5 +45,5 @@ nice -n 10 kb count -i ../genomes/GRCh38.p13+ERCC/GRCh38.p13+ERCC.idx \
            /path/to/fastq/plate29_R1.fastq.gz \ # R2 are only UMI, barcodes, and poly(T)
 ```
 
-### 4 After creating the reference and running the kb count, load cell_x_genes.mtx into R.
+### 4 Load the cell_x_genes.mtx into R.
 The kallistobus output, cell_x_genes.mtx matrix, was used for further analysis in R (see _scPASseq.Rmd_). Two Rebecca's scripts for ERCC and UMI layout in plate were used in the R code (_qc_ercc_384plot.R_ and _qc_umis_384plot.R_).
