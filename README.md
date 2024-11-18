@@ -9,7 +9,6 @@ This workflow describes how to analyze data produced by a single-cell plate-base
 The library prep protocol can be found at **LW-100 test new single cell PASseq protocol** in eLabFTW journal, Mulder group.
 
 The fastq data were mapped by kallistobus (see _mapping-data-kallistobus.sh_, plate barcodes can be found in _barcodes384.txt_ file). 
-The kallistobus output, cell_x_genes.mtx matrix, was used for further analysis in R (see _scPASseq.Rmd_). Two Rebecca's scripts for ERCC and UMI layout in plate were used in the R code (_qc_ercc_384plot.R_ and _qc_umis_384plot.R_).
 
 In our set-up, the barcodes are stored in R2: 8 nt UMI, 8 nt* cell barcode, poly-T, and only few nt. Therefore, we use only R1 for the genomic sequence, and R2 barcodes for cell assignment.
 
@@ -20,3 +19,32 @@ Further explanation on kallistobus package and usage on CEL-Seq2 poly-dT oligos 
 
 
 \* The picture shows only 6 nt barcodes, because it comes from a PAS-seq tube-based experiment. There we use 48 different 6nt CEL-Seq2 RT primes. However, for plate-based experiments (as is this one), we have a set of 384 8nt CEL-Seq2 RT primers.
+
+## Map the fastq data with kallisotbus
+The fastq data were mapped by kallistobus (plate barcodes can be found in _barcodes384.txt_ file).
+
+### 1 Download genome
+Download a genome of interest in .fa and .gtf format 
+If you are using ERCC, merge the genome of interest with ERCC.fa and ERCC.gtf, GRCh38p13+ERCC can be found in /vol/moldevbio/veenstra/asenovska/genomes/GRCh38.p13+ERCC/
+
+### 2 Index the genome
+Run _kallistobus reference_ to get the .idx file, GRCh38.p13+ERCC.idx can be found in the folder above
+```
+kb ref -i GRCh38.p13+ERCC.idx -g GRCh38.p13+ERCC.t2g.txt -f1 GRCh38+ERCC.p13.cdna.fa GRCh38.p13+ERCC.fa GRCh38.p13+ERCC.annotation.gtf
+```
+
+### 3 Map the data with kallistobus count
+In the code below, there is an -x flag with different numbers. Those explain the position of barcodes. 0 stands for R1, 1 for R2. The order is: barcode file, start bp, end bp : UMI file, start bp, end bp : coding file, start bp, end bp. Our barcodes are in R2 between positions 8-16.
+This is further specified in Rebecca's paper (https://www.biorxiv.org/content/10.1101/2024.04.09.588683v2) in section COMPUTATIONAL METHODS, Processing and integration of CEL-Seq2 scRNA-sequencing data.
+Similarly as in bulk PAS-seq, we only use R1 fastq files, because R2 contain mostly barcodes and polyT.
+```
+nice -n 10 kb count -i ../genomes/GRCh38.p13+ERCC/GRCh38.p13+ERCC.idx \
+           -g ../genomes/GRCh38.p13+ERCC/GRCh38.p13+ERCC_t2g.txt \
+           -x 1,8,16:1,0,8:0,0,0 -w barcodes384.txt \ 
+           --overwrite --verbose -t 40 \
+           -o "results_kb_ERCC_manual" \
+           /path/to/fastq/plate29_R1.fastq.gz \ # R2 are only UMI, barcodes, and poly(T)
+```
+
+### 4 After creating the reference and running the kb count, load cell_x_genes.mtx into R.
+The kallistobus output, cell_x_genes.mtx matrix, was used for further analysis in R (see _scPASseq.Rmd_). Two Rebecca's scripts for ERCC and UMI layout in plate were used in the R code (_qc_ercc_384plot.R_ and _qc_umis_384plot.R_).
