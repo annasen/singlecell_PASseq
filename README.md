@@ -31,6 +31,9 @@ kb ref -i GRCh38.p13+ERCC.idx -g GRCh38.p13+ERCC.t2g.txt -f1 GRCh38+ERCC.p13.cdn
 In the code below, there is an -x flag with different numbers. The numbers explain the position of barcodes. 0 stands for R1, 1 for R2.  
 The order is: barcode file, start bp, end bp : UMI file, start bp, end bp : coding file, start bp, end bp. Our barcodes are in R2 between positions 8-16.  
 This is further specified in Rebecca's paper in section COMPUTATIONAL METHODS, Processing and integration of CEL-Seq2 scRNA-sequencing data:
+> Cardiac differentiation roadmap for analysis of plasticity and balanced lineage commitment
+> Rebecca R. Snabel, Carla Cofiño-Fabrés, Marijke Baltissen, Verena Schwach, Robert Passier, Gert Jan C. Veenstra
+> bioRxiv 2024.04.09.588683
 > https://www.biorxiv.org/content/10.1101/2024.04.09.588683v2
 
 Similarly as in bulk PAS-seq, we only use R1 fastq files, because R2 contain mostly barcodes and polyT.
