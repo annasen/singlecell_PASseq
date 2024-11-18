@@ -8,8 +8,6 @@ This workflow describes how to analyze data produced by a single-cell plate-base
 
 The library prep protocol can be found at **LW-100 test new single cell PASseq protocol** in eLabFTW journal, Mulder group.
 
-The fastq data were mapped by kallistobus (see _mapping-data-kallistobus.sh_, plate barcodes can be found in _barcodes384.txt_ file). 
-
 In our set-up, the barcodes are stored in R2: 8 nt UMI, 8 nt* cell barcode, poly-T, and only few nt. Therefore, we use only R1 for the genomic sequence, and R2 barcodes for cell assignment.
 
 \* The picture shows only 6 nt barcodes, because it comes from a PAS-seq tube-based experiment. There we use 48 different 6nt CEL-Seq2 RT primes. However, for plate-based experiments (as is this one), we have a set of 384 8nt CEL-Seq2 RT primers.
