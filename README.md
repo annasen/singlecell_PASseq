@@ -10,7 +10,7 @@ The library prep protocol can be found at **LW-100 test new single cell PASseq p
 
 In our set-up, the barcodes are stored in R2: 8 nt UMI, 8 nt* cell barcode, poly-T, and only few nt. Therefore, we use only R1 for the genomic sequence, and R2 barcodes for cell assignment.
 
-![R2_like-CELseq2](https://github.com/user-attachments/assets/88cab12e-4d1a-4405-876f-6a085b09eef2)
+![R2_like-CELseq2](https://github.com/user-attachments/assets/88cab12e-4d1a-4405-876f-6a085b09eef2)  
 \* The picture shows only 6 nt barcodes, because it comes from a PAS-seq tube-based experiment. There we use 48 different 6nt CEL-Seq2 RT primes. However, for plate-based experiments (as is this one), we have a set of 384 8nt CEL-Seq2 RT primers.
 
 
