@@ -18,7 +18,7 @@ In our set-up, the barcodes are stored in R2: 8 nt UMI, 8 nt* cell barcode, poly
 The fastq data were mapped by kallistobus (plate barcodes can be found in _barcodes384.txt_ file).
 
 ### 1 Download genome
-Download a genome of interest in .fa and .gtf format.
+Download a genome of interest in .fa and .gtf format.  
 If you are using ERCC, merge the genome of interest with ERCC.fa and ERCC.gtf, GRCh38p13+ERCC can be found in /vol/moldevbio/veenstra/asenovska/genomes/GRCh38.p13+ERCC/
 
 ### 2 Index the genome
