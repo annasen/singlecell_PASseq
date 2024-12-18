@@ -19,7 +19,7 @@ The fastq data were mapped by kallistobus (plate barcodes can be found in _barco
 
 ### 1 Download genome
 Download a genome of interest in .fa and .gtf format.  
-If you are using ERCC, merge the genome of interest with ERCC.fa and ERCC.gtf, GRCh38p13+ERCC can be found in /vol/moldevbio/veenstra/asenovska/genomes/GRCh38.p13+ERCC/
+If you are using ERCC, merge the genome of interest with ERCC.fa and ERCC.gtf, GRCh38p13+ERCC can be found in `/vol/moldevbio/veenstra/asenovska/genomes/GRCh38.p13+ERCC/`
 
 ### 2 Index the genome
 Run _kallistobus reference_ to get the .idx file, GRCh38.p13+ERCC.idx can be found in the folder above
